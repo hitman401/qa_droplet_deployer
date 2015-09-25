@@ -1,0 +1,29 @@
+{
+  "auth_repo": "git@github.com:krishnaIndia/qa_cred.git",
+  "platforms": ["windows_nt", "linux"],
+  "workspace": "temp_job",
+  "outFolder": "output",
+  "minNetworkSize": 8,
+  "maxNetworkSize": 20,
+  "minSeedNodeSize": 3,
+  "maxSeedNodeSize": 6,
+  "imageId": 900,
+  "dropletSize": "512mb",
+  "sshKeys": [200, 300],
+  "libraries" : {
+    "crust": {
+      "url": "git@github.com:maidsafe/crust.git",
+      "example": "crust_peer"
+    },
+    "routing": {
+      "url": "git@github.com:maidsafe/routing.git",
+      "example": "simple_key_value_store"
+    },
+    "safe_vault": {
+      "url": "git@github.com:maidsafe/safe_vault.git"
+    }
+  },
+  "beaconPort": 5484,
+  "listeningPort": 5483,
+  "dropletUser": "qa"
+}

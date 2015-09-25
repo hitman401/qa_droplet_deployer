@@ -1,0 +1,23 @@
+{
+  "name": "qa_droplet_deployer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krishnaIndia/qa_droplet_deployer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/krishnaIndia/qa_droplet_deployer/issues"
+  },
+  "homepage": "https://github.com/krishnaIndia/qa_droplet_deployer#readme",
+  "dependencies": {
+    "async": "^1.4.2",
+    "request-json": "^0.5.3"
+  }
+}
