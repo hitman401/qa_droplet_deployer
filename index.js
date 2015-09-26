@@ -50,24 +50,10 @@ if (!isPlatformSupported()) {
 }
 
 console.log('Validating authentication...');
-//auth.init(function(err) {
-//  if (err) {
-//    console.log(err);
-//    return;
-//  }
-//  showMainMenu();
-//});
-
-
-var copyBinary = function(callback) {
-  var fs = require('fs');
-  var files = fs.readdirSync(config.workspace + '/crust/target/release/examples/');
-  if (!files || files.length === 0) {
-    callback('Binary not found');
+auth.init(function(err) {
+  if (err) {
+    console.log(err);
     return;
   }
-  var inStream = fs.createReadStream(config.workspace + '/crust/target/release/examples/' + files[0]);
-  var outStream = fs.createWriteStream(config.outFolder + '/' + files[0]);
-  inStream.pipe(outStream);
-};
-copyBinary()
+  showMainMenu();
+});
