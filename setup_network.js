@@ -350,12 +350,16 @@ exports = module.exports = function(args) {
   };
 
   var onSetupOptionSelected = function(option) {
+    var keys = [];
     option = parseInt(option);
     var optionNotValid = function() {
       console.log("Invalid option selected");
       showSetupOptions();
     };
-    if (isNaN(option) || option < 0 || option > 3) {
+    for (var key in config.libraries) {
+      keys.push(key);
+    }
+    if (isNaN(option) || option < 0 || option > keys.length) {
       optionNotValid();
     } else {
       buildLibrary(option);
