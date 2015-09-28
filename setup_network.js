@@ -3,6 +3,7 @@
 /// build and strip
 exports = module.exports = function(args) {
   var fs = require('fs');
+  var os = require('os');
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
@@ -12,6 +13,10 @@ exports = module.exports = function(args) {
   var ADVANCED_ARG = 'advanced';
 
   var selectedLibrary;
+  var libraryConfig;
+  var binaryPath;
+  var binaryName;
+  var buildPath;
   var networkSize;
   var seedNodeSize;
   var dropletRegions;
@@ -20,25 +25,28 @@ exports = module.exports = function(args) {
   var beaconPort;
   var listeningPort;
 
+  var BINARY_EXT = {
+    'windows_nt': '.exe',
+    'linux': ''
+  }[os.type().toLowerCase()];
+
   var clone = function(callback) {
     console.log('Cloning Repo :: ' + selectedLibrary);
-    exec('git clone ' + config.libraries[selectedLibrary].url + ' ' +
-          config.workspace + '/' + selectedLibrary + ' --depth 1', function(err) {
+    exec('git clone ' + libraryConfig.url + ' ' +
+          buildPath + ' --depth 1', function(err) {
       callback(err);
     });
   };
 
   // TODO add strip command
   var build = function(callback) {
-    var path = config.workspace + '/' + selectedLibrary;
-    var libConfig = config.libraries[selectedLibrary];
     var buildCommand = 'cargo build';
-    if (libConfig.hasOwnProperty('example')) {
-      buildCommand += ' --example ' + libConfig['example'];
+    if (libraryConfig.hasOwnProperty('example')) {
+      buildCommand += ' --example ' + libraryConfig['example'];
     }
     buildCommand += ' --release';
-    console.log('Building Library :: ' + path);
-    exec('cd ' + path + ' && ' + buildCommand, function(err) {
+    console.log('Building Repository - ' + selectedLibrary);
+    exec('cd ' + buildPath + ' && ' + buildCommand, function(err) {
       callback(err)
     });
   };
@@ -171,7 +179,7 @@ exports = module.exports = function(args) {
     });
   };
 
-  var getBeconPort = function(callback) {
+  var getBeaconPort = function(callback) {
     if (!args.hasOwnProperty(ADVANCED_ARG)) {
       callback(null);
       return;
@@ -181,7 +189,7 @@ exports = module.exports = function(args) {
         port = parseInt(port);
         if (isNaN(port)) {
           console.log('Invalid input');
-          getBeconPort(callback);
+          getBeaconPort(callback);
           return;
         }
       }
@@ -239,25 +247,22 @@ exports = module.exports = function(args) {
     bootstrapFile['hard_coded_contacts'] = generateEndPoints();
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
-    fs.writeFileSync(config.outFolder + '/' + selectedLibrary + '.bootstrap.cache',
+    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibrary;
+    fs.writeFileSync(config.outFolder + '/' + prefix + '.bootstrap.cache',
         JSON.stringify(bootstrapFile, null, 2));
     for (var i in createdDroplets) {
       spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
       spaceDelimittedFile += createdDroplets[i].networks.v4[0].ip_address;
     }
-    fs.writeFileSync(config.outFolder + '/ip_list', spaceDelimittedFile);
+    fs.writeFileSync(config.outFolder + '/' + config.outputIPListFile, spaceDelimittedFile);
     callback(null);
   };
 
   var copyBinary = function(callback) {
-    var files = fs.readdirSync(config.workspace + '/' + selectedLibrary + '/target/release/examples/');
-    if (!files || files.length === 0) {
-      callback('Binary not found');
-      return;
-    }
-    var inStream = fs.createReadStream(config.workspace + '/crust/target/release/examples/' + files[0]);
-    var outStream = fs.createWriteStream(config.outFolder + '/' + files[0]);
+    var inStream = fs.createReadStream(binaryPath + binaryName + BINARY_EXT);
+    var outStream = fs.createWriteStream(config.outFolder + '/' + binaryName + BINARY_EXT);
     inStream.pipe(outStream);
+    callback(null);
   };
 
   var transferFiles = function(callback) {
@@ -278,7 +283,11 @@ exports = module.exports = function(args) {
       libraries.push(key);
     }
     selectedLibrary = libraries[option - 1];
-
+    libraryConfig = config.libraries[selectedLibrary];
+    binaryName = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibrary;
+    binaryPath = config.workspace + '/' + selectedLibrary + '/target/release/' +
+      (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
+    buildPath = config.workspace + '/' + selectedLibrary;
     async.waterfall([
       clone,
       build,
@@ -290,7 +299,7 @@ exports = module.exports = function(args) {
       createDroplets,
       getDroplets,
       getConnectionType,
-      getBeconPort,
+      getBeaconPort,
       getListeningPort,
       generateConfigFile,
       copyBinary,

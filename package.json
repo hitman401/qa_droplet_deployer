@@ -18,6 +18,7 @@
   "homepage": "https://github.com/krishnaIndia/qa_droplet_deployer#readme",
   "dependencies": {
     "async": "^1.4.2",
-    "request-json": "^0.5.3"
+    "request-json": "^0.5.3",
+    "scp2": "^0.2.2"
   }
 }

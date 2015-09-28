@@ -12,7 +12,6 @@ var AuthManager = function() {
   var userName;
   var credentials = {};
 
-  // TODO test this for a failure case
   var getGitUser = function(callback) {
     exec("git config --global user.name", function(err, stdout) {
       if (err) {
@@ -54,9 +53,8 @@ var AuthManager = function() {
     return userName;
   };
 
-  //TODO get from credentials
   this.getDigitalOceanToken = function() {
-    return '55c578f53a5ba08b6d7546efdec582de8dd38ad1738bec3ed734dc316db57293';
+    return return credentials['digitalOceanToken'] | '';
   };
 
   return this;

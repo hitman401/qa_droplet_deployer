@@ -3,13 +3,11 @@
   "platforms": ["windows_nt", "linux"],
   "workspace": "temp_job",
   "outFolder": "output",
+  "outputIPListFile": "ip_list",
   "minNetworkSize": 8,
   "maxNetworkSize": 20,
   "minSeedNodeSize": 3,
   "maxSeedNodeSize": 6,
-  "imageId": 900,
-  "dropletSize": "512mb",
-  "sshKeys": [200, 300],
   "libraries" : {
     "crust": {
       "url": "git@github.com:maidsafe/crust.git",
@@ -25,5 +23,8 @@
   },
   "beaconPort": 5484,
   "listeningPort": 5483,
-  "dropletUser": "qa"
+  "dropletUser": "qa",
+  "dropletSize": "512mb",
+  "imageId": 900,
+  "sshKeys": [200, 300]
 }
