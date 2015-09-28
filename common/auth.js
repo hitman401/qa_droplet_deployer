@@ -8,6 +8,7 @@ var AuthManager = function() {
   var exec = require('child_process').exec;
   var config = require('../config.json');
   var CLONED_REPO_NAME = 'qa_repo';
+  var TOKEN_KEY = 'digitalOceanToken';
 
   var userName;
   var credentials = {};
@@ -54,7 +55,7 @@ var AuthManager = function() {
   };
 
   this.getDigitalOceanToken = function() {
-    return return credentials['digitalOceanToken'] | '';
+    return credentials.hasOwnProperty(TOKEN_KEY) ? credentials[TOKEN_KEY] : config[TOKEN_KEY];
   };
 
   return this;

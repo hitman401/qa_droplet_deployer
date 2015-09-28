@@ -7,12 +7,12 @@ exports = module.exports = function(args) {
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
-  var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken());
+  var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
   var exec = require('child_process').exec;
   var async = require('async');
   var ADVANCED_ARG = 'advanced';
 
-  var selectedLibrary;
+  var selectedLibraryRepoName;
   var libraryConfig;
   var binaryPath;
   var binaryName;
@@ -31,7 +31,7 @@ exports = module.exports = function(args) {
   }[os.type().toLowerCase()];
 
   var clone = function(callback) {
-    console.log('Cloning Repo :: ' + selectedLibrary);
+    console.log('Cloning Repo :: ' + selectedLibraryRepoName);
     exec('git clone ' + libraryConfig.url + ' ' +
           buildPath + ' --depth 1', function(err) {
       callback(err);
@@ -45,7 +45,7 @@ exports = module.exports = function(args) {
       buildCommand += ' --example ' + libraryConfig['example'];
     }
     buildCommand += ' --release';
-    console.log('Building Repository - ' + selectedLibrary);
+    console.log('Building Repository - ' + selectedLibraryRepoName);
     exec('cd ' + buildPath + ' && ' + buildCommand, function(err) {
       callback(err)
     });
@@ -133,7 +133,7 @@ exports = module.exports = function(args) {
     var requests = [];
     for (var i = 0; i < networkSize; i++) {
       region = selectedRegions[i % selectedRegions.length];
-      name = auth.getUserName() + '-' + selectedLibrary + '-TN-' + region + '-' + (i+1);
+      name = auth.getUserName() + '-' + selectedLibraryRepoName + '-TN-' + region + '-' + (i+1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
     async.series(requests, function(err, idList) {
@@ -247,7 +247,7 @@ exports = module.exports = function(args) {
     bootstrapFile['hard_coded_contacts'] = generateEndPoints();
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
-    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibrary;
+    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/' + prefix + '.bootstrap.cache',
         JSON.stringify(bootstrapFile, null, 2));
     for (var i in createdDroplets) {
@@ -282,12 +282,14 @@ exports = module.exports = function(args) {
     for (var key in config.libraries) {
       libraries.push(key);
     }
-    selectedLibrary = libraries[option - 1];
-    libraryConfig = config.libraries[selectedLibrary];
-    binaryName = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibrary;
-    binaryPath = config.workspace + '/' + selectedLibrary + '/target/release/' +
+    var selectedKey = libraries[option - 1];
+    var temp = config.libraries[selectedKey].url.split('/');
+    selectedLibraryRepoName = temp[temp.length - 1].split('.')[0];
+    libraryConfig = config.libraries[selectedKey];
+    binaryName = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
+    binaryPath = config.workspace + '/' + selectedLibraryRepoName + '/target/release/' +
       (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
-    buildPath = config.workspace + '/' + selectedLibrary;
+    buildPath = config.workspace + '/' + selectedLibraryRepoName;
     async.waterfall([
       clone,
       build,
@@ -324,11 +326,17 @@ exports = module.exports = function(args) {
   };
 
   var showSetupOptions = function() {
-    utils.postQuestion('Please choose the library for which the network is to be set up: \n\
---------- \n\
-1. CRUST Example - crust_peer\n\
-2. Routing Example - simple_key_value_store\n\
-3. Vault Binary - safe_vault', onSetupOptionSelected);
+    var libOptions = "\n--------- \n";
+    var i =1;
+    var isExample;
+    for (var key in config.libraries) {
+      isExample = config.libraries[key].hasOwnProperty('example');
+      libOptions +=  (i + '. ' + key + ' ' + (isExample ? 'Example' : 'Binary')
+        + ' - ' + (isExample ? config.libraries[key]['example'] : config.libraries[key]['binary']) + '\n');
+      i++;
+    }
+
+    utils.postQuestion('Please choose the library for which the network is to be set up: ' + libOptions, onSetupOptionSelected);
   };
 
   showSetupOptions();

@@ -9,16 +9,17 @@
   "minSeedNodeSize": 3,
   "maxSeedNodeSize": 6,
   "libraries" : {
-    "crust": {
+    "CRUST": {
       "url": "git@github.com:maidsafe/crust.git",
       "example": "crust_peer"
     },
-    "routing": {
+    "Routing": {
       "url": "git@github.com:maidsafe/routing.git",
       "example": "simple_key_value_store"
     },
-    "safe_vault": {
-      "url": "git@github.com:maidsafe/safe_vault.git"
+    "Vault": {
+      "url": "git@github.com:maidsafe/safe_vault.git",
+      "binary": "safe_vault"
     }
   },
   "beaconPort": 5484,
@@ -26,5 +27,7 @@
   "dropletUser": "qa",
   "dropletSize": "512mb",
   "imageId": 900,
-  "sshKeys": [200, 300]
+  "sshKeys": [200, 300],
+  "testMode": true,
+  "digitalOceanToken": ""
 }

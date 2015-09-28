@@ -1,4 +1,4 @@
-var Api = function(token) {
+var Api = function(token, testMode) {
   var request = require('request-json');
 
   var client = request.createClient("https://api.digitalocean.com/");
@@ -48,25 +48,31 @@ var Api = function(token) {
       "user_data": null,
       "private_networking": null
     };
-    //client.post('/v2/droplets', payload, function(err, response, body) {
-    //  if(err || response.statusCode != 202) {
-    //    callback('Failed to fetch regions list');
-    //  } else {
-    //    callback(null, body.droplet.id);
-    //  }
-    //});
-    callback(null, name);
+    if (testMode) {
+      callback(null, 101);
+      return;
+    }
+    client.post('/v2/droplets', payload, function(err, response, body) {
+      if(err || response.statusCode != 202) {
+        callback('Failed to fetch regions list');
+      } else {
+        callback(null, body.droplet.id);
+      }
+    });
   };
 
   this.getDroplet = function(id, callback) {
-    //client.get('v2/sizes/droplets/' + id, function(err, response, body) {
-    //  if(err || response.statusCode != 200) {
-    //    callback('Failed to fetch regions list');
-    //    return;
-    //  }
-    //  callback(null, body.droplet);
-    //})
-    callback(null, require('../droplet.json'));
+    if (testMode) {
+      callback(null, require('../droplet.json'));
+      return;
+    }
+    client.get('v2/sizes/droplets/' + id, function(err, response, body) {
+      if(err || response.statusCode != 200) {
+        callback('Failed to fetch regions list');
+        return;
+      }
+      callback(null, body.droplet);
+    });
   };
 
   return this;
