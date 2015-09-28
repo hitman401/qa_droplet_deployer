@@ -52,7 +52,7 @@ var Api = function(token, testMode) {
       callback(null, 101);
       return;
     }
-    client.post('/v2/droplets', payload, function(err, response, body) {
+    client.post('v2/droplets', payload, function(err, response, body) {
       if(err || response.statusCode != 202) {
         callback('Failed to fetch regions list');
       } else {
@@ -66,12 +66,36 @@ var Api = function(token, testMode) {
       callback(null, require('../droplet.json'));
       return;
     }
-    client.get('v2/sizes/droplets/' + id, function(err, response, body) {
+    client.get('v2/droplets/' + id, function(err, response, body) {
       if(err || response.statusCode != 200) {
         callback('Failed to fetch regions list');
         return;
       }
       callback(null, body.droplet);
+    });
+  };
+
+  this.getDropletList = function(callback) {
+    client.get('v2/droplets', function(err, response, body) {
+      if(err || response.statusCode != 200) {
+        callback('Failed to fetch Droplets list');
+        return;
+      }
+      callback(null, body.droplets);
+    });
+  };
+
+  this.deletDroplet = function(id, callback) {
+    if (testMode) {
+      callback(null);
+      return;
+    }
+    client.delete('v2/droplets/' + id, function(err, response) {
+      if(err || response.statusCode != 204) {
+        callback(id);
+        return;
+      }
+      callback(null);
     });
   };
 

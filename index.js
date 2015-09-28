@@ -1,4 +1,5 @@
 var SetUpNetwork = require('./setup_network');
+var DropNetwork = require('./drop_network');
 var utils = require('./common/utils');
 var auth = require('./common/auth');
 var config = require('./config');
@@ -27,6 +28,7 @@ var onMainOptionSelected = function(result) {
         break;
 
       case 2:
+          DropNetwork();
         break;
 
       default:
