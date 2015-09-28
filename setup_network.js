@@ -4,12 +4,14 @@
 exports = module.exports = function(args) {
   var fs = require('fs');
   var os = require('os');
+  var scpClient = require('scp2');
+  var async = require('async');
+  var exec = require('child_process').exec;
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
-  var exec = require('child_process').exec;
-  var async = require('async');
+
   var ADVANCED_ARG = 'advanced';
 
   var selectedLibraryRepoName;
@@ -31,14 +33,13 @@ exports = module.exports = function(args) {
   }[os.type().toLowerCase()];
 
   var clone = function(callback) {
-    console.log('Cloning Repo :: ' + selectedLibraryRepoName);
+    console.log('Cloning Repository - ' + selectedLibraryRepoName);
     exec('git clone ' + libraryConfig.url + ' ' +
           buildPath + ' --depth 1', function(err) {
       callback(err);
     });
   };
 
-  // TODO add strip command
   var build = function(callback) {
     var buildCommand = 'cargo build';
     if (libraryConfig.hasOwnProperty('example')) {
@@ -47,7 +48,13 @@ exports = module.exports = function(args) {
     buildCommand += ' --release';
     console.log('Building Repository - ' + selectedLibraryRepoName);
     exec('cd ' + buildPath + ' && ' + buildCommand, function(err) {
-      callback(err)
+      callback(err);
+    });
+  };
+
+  var stripBinary = function(callback) {
+    exec('strip -s ' + binaryPath + binaryName, function(err) {
+      callback(err);
     });
   };
 
@@ -259,22 +266,46 @@ exports = module.exports = function(args) {
   };
 
   var copyBinary = function(callback) {
-    var inStream = fs.createReadStream(binaryPath + binaryName + BINARY_EXT);
-    var outStream = fs.createWriteStream(config.outFolder + '/' + binaryName + BINARY_EXT);
+    var inStream = fs.createReadStream(binaryPath + binaryName);
+    var outStream = fs.createWriteStream(config.outFolder + '/' + binaryName);
     inStream.pipe(outStream);
     callback(null);
   };
 
   var transferFiles = function(callback) {
-    console.log('SSH output directory -- To be implemented');
-    callback(null);
+    if (config.testMode) {
+      console.log('Skipping SCP in test mode');
+      callback(null);
+      return;
+    }
+    var TransferFunc = function(ip) {
+
+      this.run = function(cb) {
+        scpClient.scp(config.outFolder + '/', {
+          host: ip,
+          username: config.dropletUser,
+          password: auth.getDopletUserPassword(),
+          path: '/home/' + config.dropletUser + '/'
+        }, function(err) {
+          cb(err);
+        });
+      };
+
+      return this.run;
+    };
+    var requests = [];
+    for (var i in createdDroplets) {
+      requests.push(new TransferFunc(createdDroplets[i].networks.v4[0].ip_address));
+    }
+    async.waterfall(requests, callback);
   };
 
-  var printResult = function() {
+  var printResult = function(callback) {
     for (var i in createdDroplets) {
       console.log(createdDroplets[i].name +
       '- ssh ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address);
     }
+    callback(null);
   };
 
   var buildLibrary = function(option) {
@@ -286,16 +317,18 @@ exports = module.exports = function(args) {
     var temp = config.libraries[selectedKey].url.split('/');
     selectedLibraryRepoName = temp[temp.length - 1].split('.')[0];
     libraryConfig = config.libraries[selectedKey];
-    binaryName = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
+    binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName) +
+      BINARY_EXT;
     binaryPath = config.workspace + '/' + selectedLibraryRepoName + '/target/release/' +
       (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
     buildPath = config.workspace + '/' + selectedLibraryRepoName;
     async.waterfall([
+      getDropletRegions,
       clone,
       build,
+      stripBinary,
       getNetworkSize,
       getSeedNodeSize,
-      getDropletRegions,
       getNetworkType,
       selectDropletRegion,
       createDroplets,
@@ -308,7 +341,11 @@ exports = module.exports = function(args) {
       transferFiles,
       printResult
     ], function(err) {
-      console.log(err);
+      if (err) {
+        console.log(err);
+        return;
+      }
+      console.log('Completed Setup - Output folder ->', config.outFolder);
     });
   };
 

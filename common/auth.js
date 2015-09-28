@@ -9,6 +9,7 @@ var AuthManager = function() {
   var config = require('../config.json');
   var CLONED_REPO_NAME = 'qa_repo';
   var TOKEN_KEY = 'digitalOceanToken';
+  var PASSWORD_KEY = 'dropletUserPassword';
 
   var userName;
   var credentials = {};
@@ -55,7 +56,11 @@ var AuthManager = function() {
   };
 
   this.getDigitalOceanToken = function() {
-    return credentials.hasOwnProperty(TOKEN_KEY) ? credentials[TOKEN_KEY] : config[TOKEN_KEY];
+    return (config.hasOwnProperty(TOKEN_KEY) ? config : credentials)[TOKEN_KEY];
+  };
+
+  this.getDopletUserPassword = function() {
+    return (credentials.hasOwnProperty(PASSWORD_KEY) ? credentials : config)[PASSWORD_KEY];
   };
 
   return this;

@@ -29,5 +29,4 @@
   "imageId": 900,
   "sshKeys": [200, 300],
   "testMode": true,
-  "digitalOceanToken": ""
 }
