@@ -54,7 +54,6 @@ var Api = function(token, testMode) {
       callback(null, 101);
       return;
     }
-    console.log(payload);
     client.post('v2/droplets', payload, function(err, response, body) {
       if(err || response.statusCode != 202) {
         callback('Failed to fetch regions list');

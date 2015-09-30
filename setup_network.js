@@ -145,12 +145,7 @@ exports = module.exports = function(args) {
       console.log("Creating droplet -", name);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
-    async.series(requests, function(err, idList) {
-      console.log('Waiting for droplets to initialise...');
-      setTimeout(function() {
-        callback(null, idList);
-      }, 2 * 60 * 1000); // Waiting to give some time for the droplet to be up.
-    });
+    async.series(requests, callback);
   };
 
   var getDroplets = function(idList, callback) {
@@ -160,18 +155,28 @@ exports = module.exports = function(args) {
       };
       return this.run;
     };
-    var requests = [];
-    for (var i in idList) {
-      requests.push(new TempFunc(idList[i]));
-    }
-    async.series(requests, function(err, droplets) {
-      if(err) {
-        console.log(err);
-        return;
+    var getDropletInfo = function() {
+      var requests = [];
+      for (var i in idList) {
+        requests.push(new TempFunc(idList[i]));
       }
-      createdDroplets = droplets;
-      callback(null);
-    });
+      async.series(requests, function(err, droplets) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        createdDroplets = droplets;
+        if (createdDroplets.length === 0) {
+          callback('Droplets could not be created');
+        } else if (createdDroplets[createdDroplets.length - 1].networks.v4.length === 0) {
+          console.log('Droplets are not initialised yet.. Will check again in some time');
+          getDroplets(idList, callback);
+        } else {
+          callback(null);
+        }
+      });
+    };
+    setTimeout(getDropletInfo, 2 * 60 * 1000);
   };
 
   var getConnectionType = function(callback) {
@@ -291,6 +296,7 @@ exports = module.exports = function(args) {
         scpClient.scp(config.outFolder + '/scp/', {
           host: ip,
           username: config.dropletUser,
+          password: auth.getDopletUserPassword(),
           path: config.remotePathToTransferFiles
         }, function(err) {
           cb(err);
