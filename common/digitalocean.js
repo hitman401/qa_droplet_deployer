@@ -1,3 +1,5 @@
+// TODO try to replace with digitalocean.node package from npm
+
 var Api = function(token, testMode) {
   var request = require('request-json');
 
@@ -52,6 +54,7 @@ var Api = function(token, testMode) {
       callback(null, 101);
       return;
     }
+    console.log(payload);
     client.post('v2/droplets', payload, function(err, response, body) {
       if(err || response.statusCode != 202) {
         callback('Failed to fetch regions list');
@@ -66,7 +69,9 @@ var Api = function(token, testMode) {
       callback(null, require('../droplet.json'));
       return;
     }
+    console.log(' id  ::', id);
     client.get('v2/droplets/' + id, function(err, response, body) {
+      console.log(response.statusCode);
       if(err || response.statusCode != 200) {
         callback('Failed to fetch regions list');
         return;
@@ -76,7 +81,7 @@ var Api = function(token, testMode) {
   };
 
   this.getDropletList = function(callback) {
-    client.get('v2/droplets', function(err, response, body) {
+    client.get('v2/droplets?page=1&per_page=500', function(err, response, body) {
       if(err || response.statusCode != 200) {
         callback('Failed to fetch Droplets list');
         return;
@@ -85,12 +90,12 @@ var Api = function(token, testMode) {
     });
   };
 
-  this.deletDroplet = function(id, callback) {
+  this.deleteDroplet = function(id, callback) {
     if (testMode) {
       callback(null);
       return;
     }
-    client.delete('v2/droplets/' + id, function(err, response) {
+    client.del('v2/droplets/' + id, function(err, response) {
       if(err || response.statusCode != 204) {
         callback(id);
         return;

@@ -123,7 +123,7 @@ exports = module.exports = function(args) {
       if (isNaN(index) || index < 1 || index > dropletRegions.length) {
         selectDropletRegion(spreadNetwork, callback);
       } else {
-        callback(null, [dropletRegions[index]]);
+        callback(null, [dropletRegions[index - 1]]);
       }
     });
   };
@@ -138,16 +138,18 @@ exports = module.exports = function(args) {
       return this.run;
     };
     var requests = [];
+    console.log("Creating droplets...");
     for (var i = 0; i < networkSize; i++) {
       region = selectedRegions[i % selectedRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryRepoName + '-TN-' + region + '-' + (i+1);
+      console.log("Creating droplet -", name);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
     async.series(requests, function(err, idList) {
-      console.log('Waiting for droplets to initialise');
+      console.log('Waiting for droplets to initialise...');
       setTimeout(function() {
         callback(null, idList);
-      }, 5000); // Waiting to give some time for the droplet to be up.
+      }, 2 * 60 * 1000); // Waiting to give some time for the droplet to be up.
     });
   };
 
@@ -191,7 +193,7 @@ exports = module.exports = function(args) {
       callback(null);
       return;
     }
-    utils.postQuestion('Please enter the Becon port (Default:' + config.beaconPort + ')', function(port) {
+    utils.postQuestion('Please enter the Beacon port (Default:' + config.beaconPort + ')', function(port) {
       if (port !== '') {
         port = parseInt(port);
         if (isNaN(port)) {
@@ -249,13 +251,18 @@ exports = module.exports = function(args) {
     var bootstrapFile;
     var spaceDelimittedFile = '';
     bootstrapFile = require('./bootstrap_template.json');
-    bootstrapFile['tcp_listening_port'] = listeningPort | config.listeningPort;
+    if (connectionType != 3) {
+      bootstrapFile['tcp_listening_port'] = listeningPort | config.listeningPort;
+    }
+    if (connectionType != 2) {
+      bootstrapFile['utp_listening_port'] = listeningPort | config.listeningPort;
+    }
     bootstrapFile['beacon_port'] = beaconPort | config.beaconPort;
     bootstrapFile['hard_coded_contacts'] = generateEndPoints();
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/' + prefix + '.bootstrap.cache',
+    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.bootstrap.cache',
         JSON.stringify(bootstrapFile, null, 2));
     for (var i in createdDroplets) {
       spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
@@ -267,7 +274,7 @@ exports = module.exports = function(args) {
 
   var copyBinary = function(callback) {
     var inStream = fs.createReadStream(binaryPath + binaryName);
-    var outStream = fs.createWriteStream(config.outFolder + '/' + binaryName);
+    var outStream = fs.createWriteStream(config.outFolder + '/scp/' + binaryName);
     inStream.pipe(outStream);
     callback(null);
   };
@@ -281,11 +288,10 @@ exports = module.exports = function(args) {
     var TransferFunc = function(ip) {
 
       this.run = function(cb) {
-        scpClient.scp(config.outFolder + '/', {
+        scpClient.scp(config.outFolder + '/scp/', {
           host: ip,
           username: config.dropletUser,
-          password: auth.getDopletUserPassword(),
-          path: '/home/' + config.dropletUser + '/'
+          path: config.remotePathToTransferFiles
         }, function(err) {
           cb(err);
         });
@@ -368,7 +374,7 @@ exports = module.exports = function(args) {
 
   var showSetupOptions = function() {
     var libOptions = "\n--------- \n";
-    var i =1;
+    var i = 1;
     var isExample;
     for (var key in config.libraries) {
       isExample = config.libraries[key].hasOwnProperty('example');

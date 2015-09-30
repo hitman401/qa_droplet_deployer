@@ -13,11 +13,14 @@ exports = module.exports = function() {
         callback(err);
         return;
       }
+      var pattern = auth.getUserName() + '-' + libraryName;
       for (var i in list) {
-        if (list[i].name.indexOf(libraryName) > -1) {
+        console.log(list[i]);
+        if (list[i].name.indexOf(pattern) === 0) {
           droplets.push(list[i]);
         }
       }
+      console.log('Deleting ' + droplets.length + ' droplets...');
       callback(null);
     });
   };
@@ -27,7 +30,7 @@ exports = module.exports = function() {
     var Executor = function(id) {
 
       this.run = function(cb) {
-        digitalOcean.deletDroplet(id, cb);
+        digitalOcean.deleteDroplet(id, cb);
       };
 
       return this.run;
@@ -42,7 +45,9 @@ exports = module.exports = function() {
       requests.push(new Executor(droplets[i].id));
     }
 
-    async.series(requests, callback);
+    async.series(requests, function(err) {
+      err ? callback('Failed to delete some droplet(s)') : callback(null);
+    });
 
   };
 
@@ -51,12 +56,13 @@ exports = module.exports = function() {
       getDropletList,
       deleteDroplets
     ], function(err) {
-      console.log(err ? 'Failed to delete some droplet(s)' : 'Dropped Network');
+      console.log(err ? err : 'Dropped Network');
     });
   };
 
   var onLibrarySelected = function(index) {
-    var isExample;
+    //var isExample;
+    var temp;
     index = parseInt(index);
     var keys = [];
     for (var key in config.libraries) {
@@ -67,8 +73,9 @@ exports = module.exports = function() {
       showMainMenu();
       return;
     }
-    isExample = config.libraries[keys[index]].hasOwnProperty('example');
-    libraryName = isExample ? config.libraries[key]['example'] : config.libraries[key]['binary'];
+    var key = keys[index -1 ];
+    temp = config.libraries[key].url.split('/');
+    libraryName = temp[temp.length - 1].split('.')[0];
     dropNetwork();
   };
 
