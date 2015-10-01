@@ -30,6 +30,7 @@ var Utils = function() {
         postQuestion(question, callback);
       } else {
         stdin.pause();
+        console.log('\n');
         callback(result);
       }
     })

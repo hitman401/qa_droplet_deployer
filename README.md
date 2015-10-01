@@ -2,7 +2,7 @@
 
 ## Prerequisite
 
-Nodejs should be installed.
+[Nodejs](https://nodejs.org/en/download/) should be installed.
  
 ## Setting up instruction
 
@@ -10,9 +10,7 @@ Clone the repository and run 'npm install'.
 
 ## Usage
 
-'npm start'
-
-'npm run advanced' - For advanced options to set the beacon and listening port manually  
+'npm start' - Follow the default flow of the tool as listed [here](/script_flow.md)
 
 ## TODO
   At present the droplet list from digitalocean fetches maximum of 500 droplets only.

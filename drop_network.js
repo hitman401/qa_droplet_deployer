@@ -15,7 +15,6 @@ exports = module.exports = function() {
       }
       var pattern = auth.getUserName() + '-' + libraryName;
       for (var i in list) {
-        console.log(list[i]);
         if (list[i].name.indexOf(pattern) === 0) {
           droplets.push(list[i]);
         }
@@ -56,7 +55,7 @@ exports = module.exports = function() {
       getDropletList,
       deleteDroplets
     ], function(err) {
-      console.log(err ? err : 'Dropped Network');
+      console.log(err ? err : 'Dropped Network - All droplets will be destroyed in few minutes');
     });
   };
 

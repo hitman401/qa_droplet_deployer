@@ -56,7 +56,7 @@ var Api = function(token, testMode) {
     }
     client.post('v2/droplets', payload, function(err, response, body) {
       if(err || response.statusCode != 202) {
-        callback('Failed to fetch regions list');
+        callback('Failed to create droplet with status code :: ' + response.statusCode);
       } else {
         callback(null, body.droplet.id);
       }
@@ -68,11 +68,9 @@ var Api = function(token, testMode) {
       callback(null, require('../droplet.json'));
       return;
     }
-    console.log(' id  ::', id);
     client.get('v2/droplets/' + id, function(err, response, body) {
-      console.log(response.statusCode);
       if(err || response.statusCode != 200) {
-        callback('Failed to fetch regions list');
+        callback('Failed to fetch Droplet');
         return;
       }
       callback(null, body.droplet);

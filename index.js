@@ -39,7 +39,7 @@ var onMainOptionSelected = function(result) {
 };
 
 var showMainMenu = function() {
-  utils.postQuestion('Main Menu \n\
+  utils.postQuestion('\nMain Menu \n\
 --------- \n\
 1. Setup Network \n\
 2. Drop Network', onMainOptionSelected);

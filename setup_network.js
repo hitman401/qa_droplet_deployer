@@ -1,6 +1,3 @@
-/// options
-/// clone
-/// build and strip
 exports = module.exports = function(args) {
   var fs = require('fs');
   var os = require('os');
@@ -91,7 +88,7 @@ exports = module.exports = function(args) {
       type = parseInt(type);
       if(isNaN(type) || type < 0 || type > 2) {
         console.log('Invalid input');
-        getSeedNodeSize(callback);
+        getNetworkType(callback);
       } else {
         callback(null, type === 1);
       }
@@ -148,6 +145,17 @@ exports = module.exports = function(args) {
     async.series(requests, callback);
   };
 
+  var isAllDropletsActive = function(list) {
+    var initialised;
+    for (var i in list) {
+      initialised = list[i].status === 'active';
+      if (!initialised) {
+        break;
+      }
+    }
+    return initialised;
+  };
+
   var getDroplets = function(idList, callback) {
     var TempFunc = function(id) {
       this.run = function(cb) {
@@ -155,6 +163,7 @@ exports = module.exports = function(args) {
       };
       return this.run;
     };
+
     var getDropletInfo = function() {
       var requests = [];
       for (var i in idList) {
@@ -162,13 +171,13 @@ exports = module.exports = function(args) {
       }
       async.series(requests, function(err, droplets) {
         if (err) {
-          console.log(err);
+          callback(err);
           return;
         }
         createdDroplets = droplets;
         if (createdDroplets.length === 0) {
           callback('Droplets could not be created');
-        } else if (createdDroplets[createdDroplets.length - 1].networks.v4.length === 0) {
+        } else if (!isAllDropletsActive(createdDroplets)) {
           console.log('Droplets are not initialised yet.. Will check again in some time');
           getDroplets(idList, callback);
         } else {
@@ -176,6 +185,7 @@ exports = module.exports = function(args) {
         }
       });
     };
+    console.log('Waiting for droplets to initialise');
     setTimeout(getDropletInfo, 2 * 60 * 1000);
   };
 
@@ -266,6 +276,7 @@ exports = module.exports = function(args) {
     bootstrapFile['hard_coded_contacts'] = generateEndPoints();
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
+    fs.mkdirSync(config.outFolder + '/scp');
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.bootstrap.cache',
         JSON.stringify(bootstrapFile, null, 2));
@@ -293,14 +304,13 @@ exports = module.exports = function(args) {
     var TransferFunc = function(ip) {
 
       this.run = function(cb) {
+        console.log("Transferring files to :: " + ip);
         scpClient.scp(config.outFolder + '/scp/', {
           host: ip,
           username: config.dropletUser,
           password: auth.getDopletUserPassword(),
           path: config.remotePathToTransferFiles
-        }, function(err) {
-          cb(err);
-        });
+        }, cb);
       };
 
       return this.run;
@@ -309,13 +319,14 @@ exports = module.exports = function(args) {
     for (var i in createdDroplets) {
       requests.push(new TransferFunc(createdDroplets[i].networks.v4[0].ip_address));
     }
-    async.waterfall(requests, callback);
+    async.parallel(requests, callback);
   };
 
-  var printResult = function(callback) {
+  var printResult = function(res, callback) {
+    console.log('\n');
     for (var i in createdDroplets) {
       console.log(createdDroplets[i].name +
-      '- ssh ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address);
+      ' ssh ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address);
     }
     callback(null);
   };
