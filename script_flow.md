@@ -26,9 +26,5 @@
 2. Drop network
     1. Validate git user.name is set. abort if not.
     2. Try and clone the maidsafe private repo only internal devs will have access to, if failed -> abort script with corresponding error. On success, retrieve the credentials for digital ocean account.
-    3. Present user with all droplet node combinations they currently have such as:
-            ```
-            Krishna Crust
-            Krishna Vault
-            ```
-    On selection of an option, destroy all droplets that match that criteria.
+    3. Present user with all library options
+    4. On selection of an option, destroy all droplets that match that criteria (<git_user>-<library>*).
